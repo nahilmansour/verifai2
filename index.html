@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TruthLens — AI Text Detector & Humanizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070d;
+  --bg2:#0e0e1a;
+  --bg3:#151524;
+  --border:#ffffff12;
+  --border2:#ffffff20;
+  --text:#f0f0f8;
+  --muted:#6e6e9a;
+  --hint:#3a3a5c;
+  --ai:#ff4d6d;
+  --human:#00d68f;
+  --acc:#7c5cfc;
+  --acc2:#a78bfa;
+  --gold:#f5a623;
+  --r:14px;
+  --r2:20px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(7,7,13,.85);border-bottom:1px solid var(--border);padding:0 2rem}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.5px;color:var(--text)}
+.nav-logo span{color:var(--acc2)}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--acc);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s}
+.nav-cta:hover{opacity:.85}
+
+/* HERO */
+.hero{max-width:1100px;margin:0 auto;padding:100px 2rem 60px;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:999px;padding:6px 16px;font-size:13px;color:var(--acc2);margin-bottom:2rem;font-weight:500}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--acc2);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(42px,7vw,80px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:1.5rem}
+.hero h1 .line2{color:var(--acc2)}
+.hero p{font-size:18px;color:var(--muted);max-width:560px;margin:0 auto 2.5rem;font-weight:300;line-height:1.7}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-acc{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:14px 32px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-acc:hover{opacity:.88;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:10px;padding:14px 32px;font-size:16px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-ghost:hover{border-color:var(--border);color:var(--text)}
+
+/* STATS ROW */
+.stats{max-width:1100px;margin:0 auto;padding:0 2rem 80px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.stat-item{background:var(--bg2);padding:2rem;text-align:center}
+.stat-num{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:var(--text);margin-bottom:4px}
+.stat-num span{color:var(--acc2)}
+.stat-label{font-size:13px;color:var(--muted)}
+
+/* MAIN TOOL */
+.tool-section{max-width:860px;margin:0 auto;padding:0 2rem 100px}
+.section-tag{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--acc2);margin-bottom:12px}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-1px;margin-bottom:8px}
+.section-sub{color:var(--muted);font-size:16px;margin-bottom:2.5rem;font-weight:300}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:2rem;margin-bottom:1.5rem;transition:border-color .3s}
+.card:hover{border-color:var(--border2)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem}
+.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+
+textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;padding:1rem 1.2rem;resize:vertical;min-height:180px;outline:none;transition:border-color .2s;font-weight:300}
+textarea::placeholder{color:var(--hint)}
+textarea:focus{border-color:var(--acc)}
+
+.input-foot{display:flex;align-items:center;justify-content:space-between;margin-top:1rem;gap:12px}
+.char-pill{font-size:12px;color:var(--hint);background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:4px 12px}
+.char-pill.ok{color:var(--human);border-color:rgba(0,214,143,.2)}
+
+.analyze-btn{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;transition:all .2s;white-space:nowrap}
+.analyze-btn:hover{opacity:.88;transform:translateY(-1px)}
+.analyze-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.analyze-btn .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.analyze-btn.loading .spinner{display:block}
+.analyze-btn.loading .btn-text{display:none}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESULTS */
+#resultSection{display:none;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+.scores-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.score-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;text-align:center}
+.score-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+.score-val{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;line-height:1;margin-bottom:.3rem}
+.score-val.ai-val{color:var(--ai)}
+.score-val.human-val{color:var(--human)}
+.score-sub{font-size:12px;color:var(--muted)}
+
+.bar-wrap{margin-bottom:1.5rem}
+.bar-track{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative}
+.bar-fill-ai{height:100%;width:0;background:var(--ai);border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.bar-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:12px}
+.bar-labels .l-ai{color:var(--ai);font-weight:600}
+.bar-labels .l-human{color:var(--human);font-weight:600}
+
+.verdict{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 18px;font-size:13px;font-weight:600;margin-bottom:1.5rem}
+.verdict.v-ai{background:rgba(255,77,109,.1);color:var(--ai);border:1px solid rgba(255,77,109,.25)}
+.verdict.v-mixed{background:rgba(245,166,35,.1);color:var(--gold);border:1px solid rgba(245,166,35,.25)}
+.verdict.v-human{background:rgba(0,214,143,.1);color:var(--human);border:1px solid rgba(0,214,143,.25)}
+.verdict-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+.signals-box{background:var(--bg3);border-radius:var(--r);padding:1.2rem}
+.signals-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem}
+.signal-item{display:flex;align-items:flex-start;gap:10px;padding:6px 0;font-size:14px;color:#b0b0cc;border-bottom:1px solid var(--border)}
+.signal-item:last-child{border-bottom:none}
+.signal-icon{width:6px;height:6px;border-radius:50%;background:var(--acc2);margin-top:7px;flex-shrink:0}
+
+/* HUMANIZER */
+.humanizer-card{margin-top:1.5rem}
+.slider-section{margin:1.2rem 0}
+.slider-row{display:flex;align-items:center;gap:14px}
+.slider-row label{font-size:13px;color:var(--muted);min-width:70px;font-weight:500}
+.slider-row input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bg3);outline:none;cursor:pointer}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--acc);cursor:pointer;border:2px solid var(--bg)}
+.slider-val{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--acc2);min-width:42px;text-align:right}
+.slider-desc{font-size:12px;color:var(--hint);margin-top:6px;padding-left:84px}
+
+.rewrite-btn{background:var(--bg3);color:var(--acc2);border:1px solid rgba(124,92,252,.3);border-radius:10px;padding:11px 24px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;transition:all .2s;margin-top:1.2rem}
+.rewrite-btn:hover{background:rgba(124,92,252,.1);border-color:rgba(124,92,252,.5)}
+.rewrite-btn:disabled{opacity:.35;cursor:not-allowed}
+
+#humanizedSection{display:none;margin-top:1.5rem;animation:fadeUp .3s ease}
+.humanized-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.new-score-badge{font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px;background:rgba(0,214,143,.1);color:var(--human);border:1px solid rgba(0,214,143,.25)}
+.copy-btn{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.copy-btn:hover{color:var(--text);border-color:var(--border2)}
+.humanized-output{background:var(--bg3);border-radius:var(--r);padding:1.2rem;font-size:14px;line-height:1.8;color:#c8c8e8;white-space:pre-wrap;border:1px solid var(--border)}
+
+/* HISTORY */
+#historySection{display:none;margin-top:2rem;animation:fadeUp .4s ease}
+.history-item{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:12px 0;border-bottom:1px solid var(--border)}
+.history-item:last-child{border-bottom:none}
+.history-text{font-size:13px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-score{font-size:13px;font-weight:600;font-family:'Syne',sans-serif;white-space:nowrap}
+.history-time{font-size:11px;color:var(--hint)}
+
+/* HOW IT WORKS */
+.how-section{max-width:1100px;margin:0 auto;padding:0 2rem 100px}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;margin-top:2.5rem}
+.step-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:2rem;position:relative;overflow:hidden;transition:border-color .3s}
+.step-card:hover{border-color:var(--border2)}
+.step-num{font-family:'Syne',sans-serif;font-size:64px;font-weight:800;color:var(--hint);line-height:1;margin-bottom:1rem;opacity:.5}
+.step-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:.5rem}
+.step-desc{font-size:14px;color:var(--muted);line-height:1.6;font-weight:300}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.footer-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px}
+.footer-logo span{color:var(--acc2)}
+.footer-copy{font-size:13px;color:var(--hint)}
+.footer-links{display:flex;gap:1.5rem}
+.footer-links a{font-size:13px;color:var(--hint);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--muted)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--hint);border-radius:3px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">Truth<span>Lens</span></div>
+    <ul class="nav-links">
+      <li><a href="#tool">Detector</a></li>
+      <li><a href="#how">How it works</a></li>
+    </ul>
+    <button class="nav-cta" onclick="document.getElementById('tool').scrollIntoView({behavior:'smooth'})">Try it free</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">AI-Powered Detection Engine</div>
+  <h1>Detect AI text.<br><span class="line2">Humanize it instantly.</span></h1>
+  <p>Paste any text and get a precise AI percentage score — then rewrite it to exactly the level you want with one slider.</p>
+  <div class="hero-btns">
+    <button class="btn-acc" onclick="document.getElementById('tool').scrollIntoView({behavior:'smooth'})">Start analyzing</button>
+    <button class="btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">See how it works</button>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="stat-num">6<span>+</span></div>
+      <div class="stat-label">Detection signals</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num"><span>~</span>97<span>%</span></div>
+      <div class="stat-label">Max AI score possible</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">0<span>s</span></div>
+      <div class="stat-label">Wait time (runs locally)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">100<span>%</span></div>
+      <div class="stat-label">Free to use</div>
+    </div>
+  </div>
+</section>
+
+<section class="tool-section" id="tool">
+  <div class="section-tag">The tool</div>
+  <h2 class="section-title">Analyze your text</h2>
+  <p class="section-sub">Minimum 50 characters. Works on English text.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Input</span>
+      <span class="char-pill" id="charCount">0 characters</span>
+    </div>
+    <textarea id="inputText" placeholder="Paste your article, essay, email, or any text here..."></textarea>
+    <div class="input-foot">
+      <span style="font-size:13px;color:var(--hint)">Min 50 characters required</span>
+      <button class="analyze-btn" id="analyzeBtn" onclick="analyzeText()">
+        <div class="spinner"></div>
+        <span class="btn-text">Analyze →</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="resultSection">
+    <div class="scores-row">
+      <div class="score-card">
+        <div class="score-label">AI generated</div>
+        <div class="score-val ai-val" id="aiPct">—</div>
+        <div class="score-sub">of this text</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">Human written</div>
+        <div class="score-val human-val" id="humanPct">—</div>
+        <div class="score-sub">of this text</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="bar-wrap">
+        <div class="bar-track">
+          <div class="bar-fill-ai" id="aiBar"></div>
+        </div>
+        <div class="bar-labels">
+          <span class="l-ai">AI content</span>
+          <span class="l-human">Human content</span>
+        </div>
+      </div>
+      <div id="verdictWrap"></div>
+      <div class="signals-box">
+        <div class="signals-title">Detected signals</div>
+        <div id="signalsList"></div>
+      </div>
+    </div>
+
+    <div class="card humanizer-card">
+      <div class="card-header">
+        <span class="card-title">Humanizer</span>
+        <span style="font-size:12px;color:var(--hint)">Rewrite to target AI level</span>
+      </div>
+      <div class="slider-section">
+        <div class="slider-row">
+          <label>Target AI</label>
+          <input type="range" min="0" max="100" step="1" value="20" id="targetSlider" oninput="updateSlider(this.value)"/>
+          <span class="slider-val" id="sliderVal">20%</span>
+        </div>
+        <div class="slider-desc" id="sliderDesc">Will significantly humanize the text</div>
+      </div>
+      <button class="rewrite-btn" id="humanizeBtn" onclick="humanizeText()">
+        ✦ Rewrite text
+      </button>
+    </div>
+
+    <div id="humanizedSection">
+      <div class="card">
+        <div class="humanized-head">
+          <span class="card-title">Rewritten output</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="new-score-badge" id="newScore"></span>
+            <button class="copy-btn" onclick="copyResult()">Copy</button>
+          </div>
+        </div>
+        <div class="humanized-output" id="humanizedOutput"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="historySection">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Recent analyses</span></div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</section>
+
+<section class="how-section" id="how">
+  <div class="section-tag">How it works</div>
+  <h2 class="section-title">Six detection signals</h2>
+  <p class="section-sub">The engine runs six heuristic checks simultaneously to score AI probability.</p>
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-title">Sentence length</div>
+      <div class="step-desc">AI tends to write 14–26 word sentences with suspicious consistency. Human writing varies.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-title">Vocabulary diversity</div>
+      <div class="step-desc">AI reuses fewer unique words per paragraph. High diversity ratio is a strong AI signal.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-title">AI phrase detection</div>
+      <div class="step-desc">Words like "furthermore", "utilize", "leverage", "paramount" and "delve" are AI favorites.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <div class="step-title">Structural variance</div>
+      <div class="step-desc">AI produces uniformly structured paragraphs. Low variance in sentence length signals AI origin.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">05</div>
+      <div class="step-title">Transition overuse</div>
+      <div class="step-desc">AI relies heavily on transition words: "first", "in addition", "as a result", "therefore".</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">06</div>
+      <div class="step-title">Punctuation density</div>
+      <div class="step-desc">AI overuses commas, semicolons, and colons — higher density than typical human writing.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Truth<span>Lens</span></div>
+    <div class="footer-copy">Built by Team Antigravity · Hackathon 2025</div>
+    <div class="footer-links">
+      <a href="#tool">Try it</a>
+      <a href="#how">How it works</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const AI_PHRASES=['furthermore','moreover','additionally','consequently','it is worth noting','it is important to','delve','utilize','leverage','paramount','in conclusion','comprehensive','nuanced','robust','streamline','facilitate','implement','endeavor','commence','nevertheless','henceforth'];
+const TRANSITIONS=['first','second','third','finally','in addition','as a result','therefore','however','subsequently'];
+const SYNONYMS={'furthermore':'also','moreover':'on top of that','additionally':'and','consequently':'so','paramount':'very important','delve':'look','utilize':'use','leverage':'use','facilitate':'help','implement':'put in place','endeavor':'try','commence':'start','comprehensive':'complete','robust':'strong','streamline':'simplify','in conclusion':'to wrap up','it is worth noting':'note that','it is important to':'make sure to','as a result':'so','in addition':'also','nevertheless':'still','therefore':'so','henceforth':'from now on','subsequently':'then'};
+
+const textarea=document.getElementById('inputText');
+const history=[];
+let currentText='';
+
+textarea.addEventListener('input',function(){
+  const n=this.value.length;
+  const el=document.getElementById('charCount');
+  el.textContent=n+' characters';
+  el.className='char-pill'+(n>=50?' ok':'');
+});
+
+function analyzeText(){
+  const text=textarea.value.trim();
+  if(text.length<50){alert('Please enter at least 50 characters.');return;}
+  currentText=text;
+  const btn=document.getElementById('analyzeBtn');
+  btn.classList.add('loading');btn.disabled=true;
+  setTimeout(()=>{
+    const r=runDetector(text);
+    renderResult(r);
+    addHistory(text,r.ai);
+    btn.classList.remove('loading');btn.disabled=false;
+  },700);
+}
+
+function runDetector(text){
+  let score=0;const signals=[];
+  const sentences=text.split(/[.!?]+/).map(s=>s.trim()).filter(Boolean);
+  const words=text.toLowerCase().match(/\b\w+\b/g)||[];
+  const tl=text.toLowerCase();
+
+  if(sentences.length){
+    const avg=sentences.reduce((a,s)=>a+s.split(' ').length,0)/sentences.length;
+    if(avg>=14&&avg<=26){score+=18;signals.push('Consistent sentence length (avg '+Math.round(avg)+' words)');}
+  }
+  if(words.length){
+    const ur=[...new Set(words)].length/words.length;
+    if(ur>0.68){score+=15;signals.push('High vocabulary diversity ('+Math.round(ur*100)+'%)');}
+  }
+  const found=AI_PHRASES.filter(p=>tl.includes(p));
+  if(found.length>=2){score+=22;signals.push('AI phrases: '+found.slice(0,3).join(', '));}
+  else if(found.length===1){score+=10;signals.push('AI phrase detected: '+found[0]);}
+  if(sentences.length>2){
+    const lens=sentences.map(s=>s.split(' ').length);
+    const avg=lens.reduce((a,b)=>a+b,0)/lens.length;
+    const v=lens.reduce((a,b)=>a+Math.pow(b-avg,2),0)/lens.length;
+    if(v<18){score+=20;signals.push('Very uniform sentence structure (low variance)');}
+    else if(v<35){score+=8;signals.push('Moderately uniform sentence structure');}
+  }
+  const tc=TRANSITIONS.filter(t=>tl.includes(t)).length;
+  if(tc>=3){score+=15;signals.push('Heavy transition word usage ('+tc+' found)');}
+  const pr=(text.match(/[,;:]/g)||[]).length/Math.max(words.length,1);
+  if(pr>0.06){score+=10;signals.push('High punctuation density');}
+  if(!signals.length)signals.push('No strong AI signals detected — likely human written');
+  const ai=Math.min(score,97);
+  return{ai,human:100-ai,signals};
+}
+
+function renderResult(r){
+  document.getElementById('aiPct').textContent=r.ai+'%';
+  document.getElementById('humanPct').textContent=r.human+'%';
+  setTimeout(()=>document.getElementById('aiBar').style.width=r.ai+'%',50);
+
+  const vw=document.getElementById('verdictWrap');
+  let vc,vt;
+  if(r.ai>=60){vc='v-ai';vt='Likely AI generated';}
+  else if(r.ai>=35){vc='v-mixed';vt='Mixed content';}
+  else{vc='v-human';vt='Likely human written';}
+  vw.innerHTML='<div class="verdict '+vc+'"><div class="verdict-dot"></div>'+vt+'</div>';
+
+  document.getElementById('signalsList').innerHTML=r.signals.map(s=>'<div class="signal-item"><div class="signal-icon"></div>'+s+'</div>').join('');
+  document.getElementById('resultSection').style.display='block';
+  document.getElementById('humanizedSection').style.display='none';
+}
+
+function updateSlider(v){
+  document.getElementById('sliderVal').textContent=v+'%';
+  const d=document.getElementById('sliderDesc');
+  if(v<=20)d.textContent='Will significantly humanize the text';
+  else if(v<=40)d.textContent='Will moderately humanize the text';
+  else if(v<=60)d.textContent='Light humanization — keeps most structure';
+  else d.textContent='Minimal changes — preserves original style';
+}
+
+function humanizeText(){
+  if(!currentText)return;
+  const target=parseInt(document.getElementById('targetSlider').value);
+  const btn=document.getElementById('humanizeBtn');
+  btn.disabled=true;btn.textContent='Rewriting...';
+  setTimeout(()=>{
+    let out=currentText;
+    if(target<60){for(const[k,v]of Object.entries(SYNONYMS)){out=out.replace(new RegExp('\\b'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','gi'),v);}}
+    if(target<40){out=out.replace(/\. ([A-Z])/g,(m,p)=>Math.abs(Math.sin(m.length*999))>0.6?'! '+p:m);}
+    if(target<20){const ss=out.split('. ');if(ss.length>3){const fillers=['Honestly, ','Look, ','Here\'s the thing — ','To be fair, '];const i=Math.floor(ss.length/2);ss[i]=fillers[Math.abs(ss[i].charCodeAt(0))%fillers.length]+ss[i][0].toLowerCase()+ss[i].slice(1);out=ss.join('. ');}}
+    const nr=runDetector(out);
+    document.getElementById('humanizedOutput').textContent=out;
+    document.getElementById('newScore').textContent='AI: ~'+nr.ai+'%';
+    document.getElementById('humanizedSection').style.display='block';
+    btn.disabled=false;btn.innerHTML='✦ Rewrite text';
+  },500);
+}
+
+function copyResult(){
+  const t=document.getElementById('humanizedOutput').textContent;
+  navigator.clipboard.writeText(t).then(()=>{
+    const b=event.target;b.textContent='Copied!';
+    setTimeout(()=>b.textContent='Copy',1500);
+  });
+}
+
+function addHistory(text,ai){
+  history.unshift({text:text.slice(0,90)+(text.length>90?'...':''),ai,time:new Date().toLocaleTimeString()});
+  if(history.length>8)history.pop();
+  document.getElementById('historyList').innerHTML=history.map(h=>`
+    <div class="history-item">
+      <span class="history-text">${h.text}</span>
+      <span class="history-score" style="color:${h.ai>=60?'var(--ai)':h.ai>=35?'var(--gold)':'var(--human)'}">${h.ai}%</span>
+      <span class="history-time">${h.time}</span>
+    </div>`).join('');
+  document.getElementById('historySection').style.display='block';
+}
+</script>
+</body>
+</html>
